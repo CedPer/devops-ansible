@@ -1,0 +1,59 @@
+---
+- name: Installation de Virtualbox et de Vagrant
+  hosts: localhost
+  become: true
+
+  tasks:
+    - name: Mise à jour du cache apt
+      ansible.builtin.apt:
+         update_cache: yes
+
+    - name: Installer les logiciels prerecquis
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - gnupg
+          - ca-certificates
+          - software-properties-common
+          - dkms
+        state: present
+
+    - name: Installer Virtualbox
+      ansible.builtin.apt:
+        name: virtualbox
+        state: present
+
+    - name: Télécharger et convertir la clé GPG HashiCorp
+      ansible.builtin.shell: |
+        set -euo pipefail
+        wget -qO- https://apt.releases.hashicorp.com/gpg | gpg --dearmor --yes -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        chmod 0644 /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      args:
+        executable: /bin/bash
+
+    - name: Déterminer le nom de code de la distribution
+      ansible.builtin.shell: |
+        set -o pipefail
+        CODENAME=$(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || true)
+        if [ -z "$CODENAME" ]; then
+          CODENAME=$(lsb_release -cs)
+        fi
+        echo "$CODENAME"
+      args:
+        executable: /bin/bash
+      register: distro_codename
+      changed_when: false
+
+    - name: Ajouter le dépôt officiel HashiCorp
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/hashicorp.list
+        mode: "0644"
+        content: |
+          deb [arch={{ ansible_facts["architecture"] | replace('x86_64', 'amd64') | replace('aarch64', 'arm64') }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ distro_codename.stdout | trim }} main
+
+    - name: Mise à jour cache + Installation Vagrant
+      ansible.builtin.apt:
+        name: vagrant
+        state: present
+        update_cache: yes

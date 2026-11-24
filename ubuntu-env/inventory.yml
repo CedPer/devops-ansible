@@ -1,0 +1,21 @@
+---
+all:
+  children:
+    monitoring_server:
+      hosts:
+        monitoring:
+          ansible_host: 192.168.56.10
+    k8s_servers:
+      children:
+        k8s_master_servers:
+          hosts:
+            k8s-master:
+              ansible_host: 192.168.56.11
+        k8s_workers_servers:
+          hosts:
+            k8s-worker:
+              ansible_host: 192.168.56.12
+    ci_servers:
+      hosts:
+        jenkins:
+          ansible_host: 192.168.56.13

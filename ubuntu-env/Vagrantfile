@@ -1,0 +1,99 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Définition des machines virtuelles à déployer
+VMS = [
+  {
+    name: "monitoring",
+    ip: "192.168.56.10",
+    cpus: 2,
+    memory: 2048
+  },
+  {
+    name: "k8s-master",
+    ip: "192.168.56.11",
+    cpus: 2,
+    memory: 4096 # Kubernetes master nécessite généralement au moins 2 à 4 Go de RAM
+  },
+  {
+    name: "k8s-worker",
+    ip: "192.168.56.12",
+    cpus: 2,
+    memory: 4096
+  },
+  {
+    name: "jenkins",
+    ip: "192.168.56.13",
+    cpus: 2,
+    memory: 2048
+  }
+]
+
+# Détection automatique de votre clé publique sur le serveur hôte Ubuntu 24.04
+# (Ansible utilise votre clé privée locale pour s'authentifier face à cette clé publique)
+pub_key_path = File.expand_path("~/.ssh/id_ed25519.pub")
+pub_key_path = File.expand_path("~/.ssh/id_rsa.pub") unless File.exist?(pub_key_path)
+
+if File.exist?(pub_key_path)
+  SSH_PUB_KEY = File.read(pub_key_path).strip
+else
+  puts "⚠️ ATTENTION : Aucune clé publique trouvée dans ~/.ssh/ (id_ed25519.pub ou id_rsa.pub)."
+  SSH_PUB_KEY = ""
+end
+
+Vagrant.configure("2") do |config|
+  # Utilisation de l'image officielle Ubuntu 24.04 LTS (Noble Numbat)
+  config.vm.box = "bento/ubuntu-24.04"
+  # Alternative officielle Canonical : "ubuntu/noble64"
+
+  # Désactive la mise à jour automatique des Guest Additions pour accélérer le démarrage
+  config.vbguest.auto_update = false if defined?(VagrantVbguest)
+
+  VMS.each do |machine|
+    config.vm.define machine[:name] do |node|
+      node.vm.hostname = machine[:name]
+
+      # Configuration du réseau privé (Host-Only) pour que Ansible puisse joindre les VMs via IP fixe
+      node.vm.network "private_network", ip: machine[:ip]
+
+      # Configuration des ressources VirtualBox (adaptez si vous utilisez libvirt/KVM)
+      node.vm.provider "virtualbox" do |vb|
+        vb.name = machine[:name]
+        vb.memory = machine[:memory]
+        vb.cpus = machine[:cpus]
+        # Désactive l'interface graphique
+        vb.gui = false
+      end
+
+      # Provisioning initial pour préparer SSH, l'heure et Python (requis par Ansible)
+      node.vm.provision "shell", inline: <<-SHELL
+        # 1. Injection de la clé publique de l'hôte pour permettre à Ansible de se connecter
+        if [ -n "#{SSH_PUB_KEY}" ]; then
+          mkdir -p /home/vagrant/.ssh
+          echo "#{SSH_PUB_KEY}" >> /home/vagrant/.ssh/authorized_keys
+          chmod 700 /home/vagrant/.ssh
+          chmod 600 /home/vagrant/.ssh/authorized_keys
+          chown -R vagrant:vagrant /home/vagrant/.ssh
+        fi
+
+        # 2. Synchronisation de l'horloge pour éviter les erreurs APT "not valid yet"
+        timedatectl set-ntp true || true
+        systemctl restart systemd-timesyncd 2>/dev/null || true
+        sleep 3
+
+        # 3. Mise à jour rapide et installation de python3 (indispensable pour les modules Ansible)
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y -qq python3 python3-apt curl
+      SHELL
+
+      # -----------------------------------------------------------------------
+      # OPTIONNEL : Décommentez les 3 lignes ci-dessous UNIQUEMENT si vous voulez
+      # vraiment copier votre CLÉ PRIVÉE à l'intérieur des VMs (ex: rebond SSH).
+      # -----------------------------------------------------------------------
+       priv_key = pub_key_path.sub('.pub', '')
+       node.vm.provision "file", source: priv_key, destination: "/home/vagrant/.ssh/id_rsa" if File.exist?(priv_key)
+       node.vm.provision "shell", inline: "chmod 600 /home/vagrant/.ssh/id_rsa && chown vagrant:vagrant /home/vagrant/.ssh/id_rsa"
+    end
+  end
+end

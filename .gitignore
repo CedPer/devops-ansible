@@ -1,0 +1,13 @@
+# Vagrant : état local des VM + clés privées générées
+.vagrant/
+
+# Ansible
+*.retry
+.vault_pass*
+*.vault_pass
+.ansible/
+
+# Python
+__pycache__/
+*.pyc
+.venv/

@@ -6,7 +6,7 @@
 
 ### Windows + VM Ubuntu 24.04
 - [Download de l'ISO Ubuntu](https://ubuntu.com/download/) : Pour le téléchargement de l'ISO Ubuntu
-- [Ubuntu 24.04 + Vagrant/VirtualBox](ubuntu-env/README.md) : création des VM et tests Ansible
+- [Ubuntu 24.04 + Vagrant/VirtualBox](windows-ubuntu-env/README.md) : création des VM et tests Ansible
 
 
 ### MacOS + Multipass

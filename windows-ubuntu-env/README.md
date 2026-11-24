@@ -3,7 +3,7 @@
 
 ## Liste des LAB 
 
-- [Lab n°1](lab1/README.MD)
+- [Lab n°1](lab1/README.md)
 
 
 

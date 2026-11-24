@@ -1,5 +1,13 @@
 # Lab n°1 
 
+## Environnement 
+
+| VM           | IP             | CPU | RAM    | Groupe Ansible        |
+|--------------|----------------|-----|--------|-----------------------|
+| `monitoring` | 192.168.56.10  | 2   | 2 Go   | `monitoring_server`   |
+| `k8s-master` | 192.168.56.11  | 2   | 4 Go   | `k8s_master_servers`  |
+| `k8s-worker` | 192.168.56.12  | 2   | 4 Go   | `k8s_workers_servers` |
+| `jenkins`    | 192.168.56.13  | 2   | 2 Go   | `ci_servers`          |
 
 ## 1. Créer les VM avec Vagrant
  
@@ -39,4 +47,3 @@ ansible all -m ping -vvv                     # mode verbeux pour diagnostiquer
 ```
  
 ---
-

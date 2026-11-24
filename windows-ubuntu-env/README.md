@@ -1,8 +1,6 @@
 # Lab d'entraînement Ansible
 
----
- 
-## 1. Préparer le serveur Ubuntu 24.04 (une seule fois)
+## 1. Préparer le serveur Ubuntu 24.04
  
 ### 1.1 Mise à jour et paquets de base
  
@@ -19,15 +17,20 @@ sudo systemctl status ssh        # doit être "active (running)"
 ip -br a                         # repérer l'IP du serveur pour s'y connecter
 ```
  
-### 1.3 Installer Ansible (PPA officiel, version récente)
+### 1.3 Installation Ansible
  
 ```bash
 sudo add-apt-repository --yes --update ppa:ansible/ansible
 sudo apt install -y ansible
 ansible --version
 ```
- 
 ---
+
+
+
+#Revue stoppée
+
+
 
 ## 2. Clés SSH
  
